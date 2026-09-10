@@ -1,0 +1,464 @@
+/* Stickies for Obsidian
+ *
+ * Colours are defined as paper/ink/edge triples per swatch so a sticky reads as a physical
+ * note in the light theme and as a tinted card in the dark one, without either set being a
+ * washed-out version of the other. Everything else keys off Obsidian's own variables so the
+ * plugin follows whatever theme is installed.
+ */
+
+.stickies-note--yellow { --sticky-paper: #fdf3b8; --sticky-edge: #e9d97e; --sticky-ink: #4a3f10; }
+.stickies-note--red    { --sticky-paper: #ffd5d0; --sticky-edge: #f0a79e; --sticky-ink: #5a1f18; }
+.stickies-note--green  { --sticky-paper: #d3f2d1; --sticky-edge: #a2d99e; --sticky-ink: #1d4720; }
+.stickies-note--blue   { --sticky-paper: #d2e8fb; --sticky-edge: #9fc9ec; --sticky-ink: #14395c; }
+.stickies-note--purple { --sticky-paper: #e6ddfa; --sticky-edge: #bfacec; --sticky-ink: #372458; }
+.stickies-note--orange { --sticky-paper: #ffe2c2; --sticky-edge: #f3bc85; --sticky-ink: #5c3410; }
+.stickies-note--gray   { --sticky-paper: #e6e6e6; --sticky-edge: #c2c2c2; --sticky-ink: #333333; }
+
+.theme-dark .stickies-note--yellow { --sticky-paper: #5b5220; --sticky-edge: #7d7030; --sticky-ink: #fbf3cf; }
+.theme-dark .stickies-note--red    { --sticky-paper: #5c2b26; --sticky-edge: #7e3c34; --sticky-ink: #ffdbd6; }
+.theme-dark .stickies-note--green  { --sticky-paper: #27492a; --sticky-edge: #37653c; --sticky-ink: #d8f5d6; }
+.theme-dark .stickies-note--blue   { --sticky-paper: #1f3d5a; --sticky-edge: #2d5680; --sticky-ink: #d6e9fb; }
+.theme-dark .stickies-note--purple { --sticky-paper: #3a2c5c; --sticky-edge: #513f80; --sticky-ink: #e6ddfa; }
+.theme-dark .stickies-note--orange { --sticky-paper: #5e3a1c; --sticky-edge: #83522a; --sticky-ink: #ffe6cd; }
+.theme-dark .stickies-note--gray   { --sticky-paper: #3a3a3a; --sticky-edge: #525252; --sticky-ink: #e4e4e4; }
+
+/* --- the overlay ---------------------------------------------------------- */
+
+/* The layer is a child of the scroll container so stickies travel with the document.
+ * That container is not positioned by default, so nothing would anchor to it otherwise. */
+.markdown-source-view .cm-scroller,
+.markdown-preview-view {
+	position: relative;
+}
+
+.stickies-overlay {
+	position: absolute;
+	inset: 0;
+	/* Zero height keeps the layer from extending the editor's scroll area; the notes inside
+	 * are absolutely positioned and overflow it on purpose. */
+	height: 0;
+	pointer-events: none;
+	z-index: 20;
+}
+
+body.stickies-hidden .stickies-overlay,
+body.stickies-hidden .stickies-anchor {
+	display: none;
+}
+
+.stickies-note {
+	position: absolute;
+	display: flex;
+	flex-direction: column;
+	pointer-events: auto;
+	background: var(--sticky-paper);
+	color: var(--sticky-ink);
+	border: 1px solid var(--sticky-edge);
+	border-radius: 2px;
+	box-shadow: 0 3px 10px rgba(0, 0, 0, 0.18), 0 1px 2px rgba(0, 0, 0, 0.12);
+	font-size: var(--font-ui-small);
+	transition: box-shadow 120ms ease, outline-color 120ms ease;
+	outline: 2px solid transparent;
+	overflow: hidden;
+}
+
+.stickies-note:hover {
+	box-shadow: 0 6px 18px rgba(0, 0, 0, 0.24), 0 2px 4px rgba(0, 0, 0, 0.14);
+}
+
+.stickies-note.is-dragging {
+	/* Straighten while dragging so the pointer lines up with the note's real edges. */
+	transform: rotate(0deg) scale(1.02) !important;
+	box-shadow: 0 14px 30px rgba(0, 0, 0, 0.3);
+	cursor: grabbing;
+	z-index: 40;
+}
+
+.stickies-note.is-flashing {
+	outline-color: var(--interactive-accent);
+}
+
+.stickies-note.is-orphaned {
+	border-style: dashed;
+}
+
+.stickies-note-header {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	padding: 3px 4px 3px 8px;
+	cursor: grab;
+	background: rgba(0, 0, 0, 0.05);
+	border-bottom: 1px solid var(--sticky-edge);
+	flex: 0 0 auto;
+	touch-action: none;
+}
+
+.theme-dark .stickies-note-header {
+	background: rgba(255, 255, 255, 0.06);
+}
+
+.stickies-note-kind {
+	flex: 1 1 auto;
+	font-size: 10px;
+	font-weight: 600;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	opacity: 0.75;
+	user-select: none;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.stickies-note-badge {
+	display: none;
+	font-size: 11px;
+	opacity: 0.8;
+}
+
+.stickies-note-badge.is-visible {
+	display: inline;
+}
+
+.stickies-note-button {
+	all: unset;
+	cursor: pointer;
+	padding: 1px 5px;
+	border-radius: 3px;
+	font-size: 12px;
+	line-height: 1;
+	color: var(--sticky-ink);
+	opacity: 0.55;
+}
+
+.stickies-note-button:hover {
+	opacity: 1;
+	background: rgba(0, 0, 0, 0.08);
+}
+
+.theme-dark .stickies-note-button:hover {
+	background: rgba(255, 255, 255, 0.12);
+}
+
+.stickies-note-close {
+	font-size: 15px;
+	opacity: 0;
+	transition: opacity 90ms ease-in;
+}
+
+.stickies-note:hover .stickies-note-close,
+.stickies-note-close:focus-visible {
+	opacity: 0.55;
+}
+
+.stickies-note-close:hover {
+	opacity: 1;
+	color: var(--text-error);
+	background: rgba(229, 119, 106, 0.18);
+}
+
+.stickies-note-content {
+	flex: 1 1 auto;
+	width: 100%;
+	min-height: 0;
+	resize: none;
+	border: none;
+	outline: none;
+	box-shadow: none;
+	background: transparent;
+	color: var(--sticky-ink);
+	font-family: var(--font-text);
+	font-size: var(--font-ui-small);
+	line-height: 1.45;
+	padding: 7px 9px;
+}
+
+.stickies-note-content::placeholder {
+	color: var(--sticky-ink);
+	opacity: 0.4;
+}
+
+.stickies-note-content:focus {
+	border: none;
+	box-shadow: none;
+}
+
+.stickies-note-resize {
+	position: absolute;
+	right: 0;
+	bottom: 0;
+	width: 14px;
+	height: 14px;
+	cursor: nwse-resize;
+	touch-action: none;
+	background: linear-gradient(
+		135deg,
+		transparent 0 45%,
+		var(--sticky-edge) 45% 55%,
+		transparent 55% 70%,
+		var(--sticky-edge) 70% 80%,
+		transparent 80%
+	);
+	opacity: 0.7;
+}
+
+/* --- anchored text in the note -------------------------------------------- */
+
+.stickies-anchor {
+	border-bottom: 2px solid var(--sticky-anchor, #e9d97e);
+	background: color-mix(in srgb, var(--sticky-anchor, #e9d97e) 26%, transparent);
+	border-radius: 2px;
+	cursor: pointer;
+	transition: background 120ms ease, box-shadow 120ms ease;
+}
+
+/* The card under the pointer lights its text up, so the pair reads as one thing. */
+.stickies-anchor--active {
+	background: color-mix(in srgb, var(--sticky-anchor, #e9d97e) 55%, transparent);
+	box-shadow: 0 0 0 2px color-mix(in srgb, var(--sticky-anchor, #e9d97e) 45%, transparent);
+}
+
+.stickies-anchor--yellow { --sticky-anchor: #e0c74a; }
+.stickies-anchor--red    { --sticky-anchor: #e5776a; }
+.stickies-anchor--green  { --sticky-anchor: #6cbb6c; }
+.stickies-anchor--blue   { --sticky-anchor: #5fa8de; }
+.stickies-anchor--purple { --sticky-anchor: #9b82d8; }
+.stickies-anchor--orange { --sticky-anchor: #e79a4e; }
+.stickies-anchor--gray   { --sticky-anchor: #a0a0a0; }
+
+/* --- the side panel ------------------------------------------------------- */
+
+.stickies-panel-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	margin-bottom: 6px;
+}
+
+.stickies-panel-header h3 {
+	margin: 0;
+}
+
+.stickies-panel-add {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	cursor: pointer;
+	font-size: var(--font-ui-smaller);
+	padding: 3px 9px;
+	color: var(--text-on-accent);
+	background: var(--interactive-accent);
+}
+
+.stickies-panel-add:hover {
+	background: var(--interactive-accent-hover);
+}
+
+.stickies-panel-add svg {
+	width: 13px;
+	height: 13px;
+}
+
+.stickies-panel-scoperow {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	margin-bottom: 8px;
+}
+
+.stickies-panel-scope {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	cursor: pointer;
+	font-size: var(--font-ui-smaller);
+	padding: 3px 9px;
+	box-shadow: inset 0 0 0 1px var(--background-modifier-border);
+}
+
+.stickies-panel-scope:hover {
+	background: var(--background-modifier-hover);
+}
+
+.stickies-panel-scope svg {
+	width: 13px;
+	height: 13px;
+	opacity: 0.75;
+}
+
+.stickies-panel-count {
+	font-size: var(--font-ui-smaller);
+	color: var(--text-faint);
+	white-space: nowrap;
+}
+
+.stickies-panel-empty {
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+	line-height: 1.5;
+	padding: 8px 2px;
+}
+
+/* One heading per note in vault scope. `:first-child` keeps the first group tight to the
+   scope row while the rest get room to separate the groups. */
+.stickies-panel-section {
+	margin: 12px 0 6px;
+	font-size: 10px;
+	font-weight: 600;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: var(--text-faint);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.stickies-panel-section:first-child {
+	margin-top: 0;
+}
+
+/* The note being read. It sorts first anyway; this says why it is up there. */
+.stickies-panel-section.is-active {
+	color: var(--text-accent);
+}
+
+.stickies-panel-item {
+	border: 1px solid var(--background-modifier-border);
+	border-left: 3px solid var(--sticky-edge, var(--background-modifier-border));
+	border-radius: 4px;
+	padding: 7px 9px;
+	margin-bottom: 6px;
+	cursor: pointer;
+	background: var(--background-primary);
+}
+
+.stickies-panel-item:hover {
+	background: var(--background-modifier-hover);
+}
+
+.stickies-panel-item--yellow { --sticky-edge: #e0c74a; }
+.stickies-panel-item--red    { --sticky-edge: #e5776a; }
+.stickies-panel-item--green  { --sticky-edge: #6cbb6c; }
+.stickies-panel-item--blue   { --sticky-edge: #5fa8de; }
+.stickies-panel-item--purple { --sticky-edge: #9b82d8; }
+.stickies-panel-item--orange { --sticky-edge: #e79a4e; }
+.stickies-panel-item--gray   { --sticky-edge: #a0a0a0; }
+
+.stickies-panel-item-top {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	margin-bottom: 3px;
+}
+
+.stickies-panel-kind {
+	font-size: 9px;
+	font-weight: 600;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: var(--text-muted);
+}
+
+.stickies-panel-file {
+	font-size: var(--font-ui-smaller);
+	color: var(--text-faint);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.stickies-panel-orphan {
+	display: inline-flex;
+	color: var(--text-error);
+}
+
+.stickies-panel-orphan svg,
+.stickies-panel-missing svg,
+.stickies-panel-free svg {
+	width: 13px;
+	height: 13px;
+}
+
+.stickies-panel-missing {
+	display: inline-flex;
+	color: var(--text-error);
+}
+
+/* The note this sticky belongs to is not in the vault. The row still deletes; it cannot open. */
+.stickies-panel-item.is-missing {
+	opacity: 0.65;
+	border-style: dashed;
+}
+
+.stickies-panel-free {
+	display: inline-flex;
+	color: var(--text-faint);
+}
+
+.stickies-panel-body {
+	font-size: var(--font-ui-smaller);
+	line-height: 1.45;
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+}
+
+.stickies-panel-quote {
+	margin-top: 4px;
+	padding-left: 7px;
+	border-left: 2px solid var(--background-modifier-border);
+	color: var(--text-faint);
+	font-size: var(--font-ui-smaller);
+	font-style: italic;
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+}
+
+.stickies-panel-actions {
+	display: flex;
+	gap: 6px;
+	margin-top: 6px;
+}
+
+.stickies-panel-actions button {
+	cursor: pointer;
+	font-size: var(--font-ui-smaller);
+	padding: 1px 8px;
+}
+
+/* --- the panel saying it could not draw ------------------------------------ */
+
+/* A blank panel reads as "no stickies", so a render failure has to announce itself. This is
+   the only place in the plugin that shows an exception to the person rather than the console. */
+.stickies-panel-failure {
+	border: 1px solid var(--text-error);
+	border-radius: 4px;
+	padding: 10px 12px;
+	font-size: var(--font-ui-smaller);
+	line-height: 1.5;
+	color: var(--text-normal);
+}
+
+.stickies-panel-failure-message {
+	margin: 6px 0;
+	padding: 6px 8px;
+	border-radius: 3px;
+	background: var(--background-modifier-error);
+	font-family: var(--font-monospace);
+	overflow-wrap: anywhere;
+}
+
+.stickies-panel-failure-hint {
+	color: var(--text-muted);
+	margin-bottom: 8px;
+}
+
+.stickies-panel-failure button {
+	cursor: pointer;
+	font-size: var(--font-ui-smaller);
+	padding: 2px 10px;
+}

@@ -1,0 +1,10 @@
+{
+  "id": "stickies",
+  "name": "Stickies",
+  "version": "0.4.0",
+  "minAppVersion": "1.5.0",
+  "description": "Movable Post-it annotations attached to Obsidian notes.",
+  "author": "Luis Tineo",
+  "authorUrl": "https://github.com/kingletas/obsidian-stickies",
+  "isDesktopOnly": false
+}

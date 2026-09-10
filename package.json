@@ -1,0 +1,19 @@
+{
+  "name": "obsidian-stickies",
+  "version": "0.4.0",
+  "type": "module",
+  "scripts": {
+    "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
+    "dev": "node esbuild.config.mjs",
+    "test": "esbuild src/anchor.ts --bundle --format=cjs --outfile=test/anchor.build.cjs --log-level=error && node test/anchor.test.cjs && node test/store.test.cjs && node test/panel.test.cjs && node test/paneldom.test.cjs && node test/reserved.test.cjs && node test/smoke.cjs"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.17",
+    "esbuild": "^0.25.5",
+    "obsidian": "latest",
+    "typescript": "^5.8.3",
+    "@codemirror/view": "6.38.6",
+    "@codemirror/state": "6.5.0"
+  },
+  "dependencies": {}
+}
