@@ -8,12 +8,12 @@
     "test": "esbuild src/anchor.ts --bundle --format=cjs --outfile=test/anchor.build.cjs --log-level=error && node test/anchor.test.cjs && node test/store.test.cjs && node test/panel.test.cjs && node test/paneldom.test.cjs && node test/reserved.test.cjs && node test/smoke.cjs"
   },
   "devDependencies": {
-    "@types/node": "^22.15.17",
-    "esbuild": "^0.25.5",
+    "@types/node": "^26.5.0",
+    "esbuild": "^0.28.2",
     "obsidian": "latest",
-    "typescript": "^5.8.3",
-    "@codemirror/view": "6.38.6",
-    "@codemirror/state": "6.5.0"
+    "typescript": "^7.0.2",
+    "@codemirror/view": "6.43.11",
+    "@codemirror/state": "6.7.4"
   },
   "dependencies": {}
 }
